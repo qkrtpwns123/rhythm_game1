@@ -44,7 +44,7 @@ class Note:
         
     def update(self, speed):
         """Move note down"""
-        self.y += speed
+        self.y += speed 
         
     def is_in_hit_range(self, judgment_line_y, hit_range=60):
         """Check if note is in hit range"""
@@ -98,7 +98,7 @@ class LongNote(Note):
         
     def get_head_y(self):
         """Get head (start) position of long note - 헤드는 아래쪽(판정선 근처)"""
-        return self.y
+        return self.y   
         
     def get_tail_y(self):
         """Get tail (end) position of long note - 테일은 위쪽"""
@@ -234,6 +234,11 @@ class RhythmGame:
         # Key states
         self.keys_held = [False, False, False, False]
         
+        # Music
+        self.music_loaded = False
+        self.music_playing = False
+        self.game_start_time = 0
+        
         self.running = True
         
     def setup_lanes(self):
@@ -365,29 +370,74 @@ class RhythmGame:
         self.keys_held = [False, False, False, False]
         for lane in self.lanes:
             lane.is_pressed = False
-        self.load_sample_chart()
+        self.load_music()
+        self.load_mario_chart()
     
-    def load_sample_chart(self):
-        """Load simple random chart"""
-        current_y = -200
+    def load_music(self):
+        """Load Super Mario music"""
+        try:
+            pygame.mixer.music.load("Super Mario.mp3")
+            self.music_loaded = True
+            print("Music loaded successfully!")
+        except pygame.error as e:
+            print(f"Could not load music: {e}")
+            self.music_loaded = False
+    
+    def load_mario_chart(self):
+        """Load Super Mario themed chart - manually crafted to match the music"""
+        self.notes = []
         
-        for i in range(40):
-            lane = random.randint(0, 3)
+        # Super Mario 테마 멜로디에 맞춘 채보
+        # 시간 간격을 조정해서 음악과 싱크를 맞춤
+        
+        # 인트로 부분 (0-4초)
+        beat_spacing = 150  # 비트 간격
+        current_y = -300
+        
+        # "Da da da da da da-da!" - 메인 멜로디 시작
+        mario_pattern = [
+            (0, current_y),
+            (0, current_y - beat_spacing),
+            (1, current_y - beat_spacing * 1.8),
+            (1, current_y - beat_spacing * 2.8),
+            (2, current_y - beat_spacing * 3.6),
+            (2, current_y - beat_spacing * 4.2),
+            (3, current_y - beat_spacing * 4.5),
             
-            # 70% normal notes, 30% long notes
-            if random.random() < 0.3:
-                # Long note
-                length = random.randint(150, 300)
-                note = LongNote(lane, current_y, length)
-                current_y -= 200 + length  # Extra spacing for long notes
-            else:
-                # Normal note
-                note = Note(lane, current_y)
-                current_y -= 120  # Normal spacing
+            (0, current_y - beat_spacing * 5),
+            (1, current_y - beat_spacing * 5.4),
+            (2, current_y - beat_spacing * 5.8),
+            (3, current_y - beat_spacing * 6.2),
+            (2, current_y - beat_spacing * 6.8),
+            (1, current_y - beat_spacing * 7.2),
+            (0, current_y - beat_spacing * 7.8),
+            (1, current_y - beat_spacing * 8.4),
+            (2, current_y - beat_spacing * 8.7),
+            (0, current_y - beat_spacing * 9.0),
+            
+            
+        ]
+        
+        # 패턴을 노트로 변환
+        for pattern in mario_pattern:
+            lane = pattern[0]
+            y_pos = pattern[1]
+            
+            if len(pattern) == 3:  # 롱노트
+                length = pattern[2]
+                note = LongNote(lane, y_pos, length)
+            else:  # 일반 노트
+                note = Note(lane, y_pos)
             
             self.notes.append(note)
         
-        print(f"Generated {len(self.notes)} random notes!")
+        # 음악 시작
+        if self.music_loaded:
+            pygame.mixer.music.play()
+            self.music_playing = True
+            self.game_start_time = pygame.time.get_ticks()
+        
+        print(f"Generated {len(self.notes)} Mario-themed notes!")
     
     def update(self):
         if self.state == GameState.PLAYING:
@@ -541,4 +591,4 @@ class RhythmGame:
 
 if __name__ == "__main__":
     game = RhythmGame()
-    game.run()
+    game.run()  
